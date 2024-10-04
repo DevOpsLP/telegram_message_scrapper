@@ -160,7 +160,8 @@ async function handleTrailingStop(tradeSignal: TradeSignal, orderResponse: Order
 function keepAlive(): void {
   setInterval(async () => {
     // const response = await client.cancelAllOpenOrders({ symbol: "XRPUSDT" })
-  }, 1000); // Set an empty interval to keep the event loop alive
+    // console.log(response)
+  }, 60000); // Set an empty interval to keep the event loop alive
 }
 
 // Start the keep-alive function

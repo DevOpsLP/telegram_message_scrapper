@@ -1,6 +1,8 @@
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 import { NewMessage, NewMessageEvent } from 'telegram/events';
+import { EditedMessage, EditedMessageEvent } from 'telegram/events/EditedMessage';
+
 import { Api } from 'telegram/tl';
 import * as readline from 'readline';
 import * as fs from 'fs';
@@ -35,6 +37,7 @@ if (isNaN(apiId) || !apiHash) {
   process.exit(1);
 }
 
+// const originalChannelIdString: string = '-1001617718235';
 const originalChannelIdString: string = '-1002230847160';
 const channelIdStringWithoutPrefix = originalChannelIdString.replace('-100', '');
 const channelId: BigInteger = bigInt(channelIdStringWithoutPrefix);
@@ -90,40 +93,64 @@ async function main(): Promise<void> {
       })
     )) as Api.Channel;
 
+    // Handler for new messages
     client.addEventHandler(
-        async (event: NewMessageEvent) => {
-          const message = event.message;
-      
-          if (message.peerId instanceof Api.PeerChannel) {
-            const peerChannel = message.peerId as Api.PeerChannel;
+      async (event: NewMessageEvent) => {
+        const message = event.message;
+
+        if (message.peerId instanceof Api.PeerChannel) {
+          const peerChannel = message.peerId as Api.PeerChannel;
+          if (peerChannel.channelId.equals(channel.id)) {
+            const messageText = message.message;
+            console.log('New message received from the channel:');
+            console.log(messageText);
+
+            processTradeSignal(messageText);
+          }
+        }
+      },
+      new NewMessage({})
+    );
+
+    // Handler for edited messages using EditedMessageEvent
+    client.addEventHandler(
+        async (event: EditedMessageEvent) => {
+          const editedMessage = event.message;
+  
+          if (editedMessage.peerId instanceof Api.PeerChannel) {
+            const peerChannel = editedMessage.peerId as Api.PeerChannel;
             if (peerChannel.channelId.equals(channel.id)) {
-              const messageText = message.message;
-              console.log('New message received from the channel:');
-              console.log(messageText);
-      
-              const tradeSignal = parseMessage(messageText);
-      
-              if (tradeSignal) {
-                console.log('Parsed Trade Signal:', tradeSignal);
-      
-                try {
-                  // Place the order and get the order response
-                  const stopLossResponse: OrderResponse = await placeOrder(tradeSignal);
-                  
-                  // Emit an event with both the tradeSignal and the stopLossResponse
-                  tradeSignalEmitter.emit('newTradeSignal', { tradeSignal, orderResponse: stopLossResponse });
-                } catch (error) {
-                  console.error('Failed to place order:', error);
-                }
-              } else {
-                console.log('Failed to parse trade signal.');
-              }
+              const editedMessageText = editedMessage.message;
+              console.log('Edited message detected in the channel:');
+              console.log(editedMessageText);
+  
+              processTradeSignal(editedMessageText);
             }
           }
         },
-        new NewMessage({})
+        new EditedMessage({})
       );
-      
+
+    // Function to process trade signals (both new and edited messages)
+    async function processTradeSignal(messageText: string) {
+      const tradeSignal = parseMessage(messageText);
+
+      if (tradeSignal) {
+        console.log('Parsed Trade Signal:', tradeSignal);
+
+        try {
+          // Place the order and get the order response
+          const stopLossResponse: OrderResponse = await placeOrder(tradeSignal);
+
+          // Emit an event with both the tradeSignal and the stopLossResponse
+          tradeSignalEmitter.emit('newTradeSignal', { tradeSignal, orderResponse: stopLossResponse });
+        } catch (error) {
+          console.error('Failed to place order:', error);
+        }
+      } else {
+        console.log('Failed to parse trade signal.');
+      }
+    }
 
     setInterval(async () => {
       try {
