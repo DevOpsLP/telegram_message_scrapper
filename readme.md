@@ -68,6 +68,7 @@ BINANCE_API_SECRET=your_binance_api_secret
 
 Replace `your_telegram_api_id`, `your_telegram_api_hash`, `your_binance_api_key`, and `your_binance_api_secret` with your actual credentials.
 
+
 ***Obtain Telegram API Credentials***.
 
 To interact with the Telegram API, you need to obtain an API ID and API Hash:
@@ -98,6 +99,12 @@ import { TradeSignal } from './types';
 const BALANCE = 7; // Change this value to the desired one
 ````
 
+***Run the file***
+Use this command to start the bot: 
+```bash 
+npm run start
+```
+and follow the prompt
 ## Code Overview
 
 ### 1. index.ts
