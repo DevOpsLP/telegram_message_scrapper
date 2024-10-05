@@ -33,5 +33,5 @@ export interface OrderResponse {
     leverage: number;
     entry: number;
     targets: number[];
-    stopLoss: number;
+    stopLoss: number | string;
   }

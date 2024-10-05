@@ -114,22 +114,22 @@ async function main(): Promise<void> {
 
     // Handler for edited messages using EditedMessageEvent
     client.addEventHandler(
-        async (event: EditedMessageEvent) => {
-          const editedMessage = event.message;
-  
-          if (editedMessage.peerId instanceof Api.PeerChannel) {
-            const peerChannel = editedMessage.peerId as Api.PeerChannel;
-            if (peerChannel.channelId.equals(channel.id)) {
-              const editedMessageText = editedMessage.message;
-              console.log('Edited message detected in the channel:');
-              console.log(editedMessageText);
-  
-              processTradeSignal(editedMessageText);
-            }
+      async (event: EditedMessageEvent) => {
+        const editedMessage = event.message;
+
+        if (editedMessage.peerId instanceof Api.PeerChannel) {
+          const peerChannel = editedMessage.peerId as Api.PeerChannel;
+          if (peerChannel.channelId.equals(channel.id)) {
+            const editedMessageText = editedMessage.message;
+            console.log('Edited message detected in the channel:');
+            console.log(editedMessageText);
+
+            processTradeSignal(editedMessageText);
           }
-        },
-        new EditedMessage({})
-      );
+        }
+      },
+      new EditedMessage({})
+    );
 
     // Function to process trade signals (both new and edited messages)
     async function processTradeSignal(messageText: string) {
@@ -137,6 +137,12 @@ async function main(): Promise<void> {
 
       if (tradeSignal) {
         console.log('Parsed Trade Signal:', tradeSignal);
+
+        // Skip order placement if stopLoss is not defined as a number
+        if (typeof tradeSignal.stopLoss === 'string') {
+          console.log(`Skipping order placement for ${tradeSignal.pair} as stop loss is not defined.`);
+          return; // Exit the function without placing an order
+        }
 
         try {
           // Place the order and get the order response
@@ -151,6 +157,7 @@ async function main(): Promise<void> {
         console.log('Failed to parse trade signal.');
       }
     }
+
 
     setInterval(async () => {
       try {
